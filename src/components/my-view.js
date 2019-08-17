@@ -87,9 +87,9 @@ class MyView extends PageViewElement {
     <div class="vertical-section-container centered" id="widget-container" @signed-in="${this.handleLogin}">
     <las2peer-frontend-statusbar service="Mentoring Cockpit"
         baseurl="${this.las2peerBaseURL}"
-        oidcpopupsigninurl="./node_modules/las2peer-frontend-statusbar/callbacks/popup-signin-callback.html"
-        oidcpopupsignouturl="./node_modules/las2peer-frontend-statusbar/callbacks/popup-signout-callback.html"
-        oidcsilentsigninturl="./node_modules/las2peer-frontend-statusbar/callbacks/silent-callback.html"
+        oidcpopupsigninurl="node_modules/las2peer-frontend-statusbar/callbacks/popup-signin-callback.html"
+        oidcpopupsignouturl="node_modules/las2peer-frontend-statusbar/callbacks/popup-signout-callback.html"
+        oidcsilentsigninturl="node_modules/las2peer-frontend-statusbar/callbacks/silent-callback.html"
         oidcclientid="${this.oidcclientid}"
         autoAppendWidget=true
         @signed-out="${this.handleLogout}"
@@ -190,7 +190,7 @@ class MyView extends PageViewElement {
   fetchStatements() {
     //aggregation http interface
     const courseURL_Encoded = this.encode(this._courseURL);
-    const uri = `${this.mcService}/${this._loginSub}/${courseURL_Encoded}/results`;
+    const uri = `${this.mcService}/mentoring/${this._loginSub}/${courseURL_Encoded}/results`;
     fetch(uri, {method: 'GET',
       'Content-Type': 'application/json'
     })
@@ -211,7 +211,7 @@ class MyView extends PageViewElement {
   fetchPersona() {
     //aggregation http interface
     const courseURL_Encoded = this.encode(this._courseURL);
-    const uri = `${this.mcService}/${this._loginSub}/${courseURL_Encoded}/students`;
+    const uri = `${this.mcService}/mentoring/${this._loginSub}/${courseURL_Encoded}/students`;
     fetch(uri, {method: 'GET',
       'Content-Type': 'application/json'
     })
@@ -292,7 +292,7 @@ class MyView extends PageViewElement {
   }
 
   _updateLearningLocker() {
-    fetch(`${this.moodleDataProxy}/${this._courseId}`, {method: 'POST'})
+    fetch(`${this.moodleDataProxy}/mc/moodle-data/${this._courseId}`, {method: 'POST'})
     .catch(() => console.log("Update failed"));
     const combos = this.shadowRoot.querySelectorAll('vaadin-combo-box');
     combos.forEach(comboBox => comboBox.value = '');
@@ -306,7 +306,7 @@ class MyView extends PageViewElement {
   
   handleLogin(event) {
     this._loginSub = event.detail.profile.sub;
-    const uri = `${this.mcService}/${this._loginSub}/courseList`
+    const uri = `${this.mcService}/mentoring/${this._loginSub}/courseList`
     fetch(uri, {method: 'GET',
       'Content-Type': 'application/json'
     })
