@@ -4,9 +4,10 @@
 # Mentoring Cockpit PWA
 This is the Mentoring Cockpit app to help tutors personalized feedback to students. It is built using the [PWA Starter Kit](https://github.com/Polymer/pwa-starter-kit/tree/template-no-redux), using the default template as the starting point and the [wiki](https://pwa-starter-kit.polymer-project.org) for configuring and personalizing.
 This repository is part of the bachelor thesis 'A Multimodal Mentoring Cockpit for Tutor Support'.
+Other related repositories for the bachelor thesis can be found here: [Mentoring Cockpit](https://github.com/rwth-acis/Mentoring-Cockpit)
 
 ## Features/highlights
-- the application state is stored and loaded from `localStorage`, so that the last requested data and the student statistics are persisted across refreshes
+- the application state is stored and loaded from `localStorage`, so that the last requested data and the student statistics are persisted across refreshes (Only the es6-unbundled version is currently supported, since es5 and bundled versions seem to have problems with including and bundling all dependencies for the las2peer-frontend-statusbar. Therefore, Polymers offline functionalities might be inconsistent in different browsers.)
 - uses the [Mentoring Cockpit Service](https://github.com/rwth-acis/mentoring-cockpit-service) to get relevant student data from [Learning Locker](https://www.ht2labs.com/learning-locker-community/overview)
 - the actual student data is loaded from arbitrary `json` files, so the app can be extended to work for any Learning Record Store (LRS)
 - the login utilizes the [las2peer-frontend-statusbar](https://github.com/rwth-acis/las2peer-frontend-statusbar) -- therefore, set up the OpenId Connect Functionality properties in the [property](etc/config.properties) file
