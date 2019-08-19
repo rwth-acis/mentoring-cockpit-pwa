@@ -2,18 +2,20 @@
   "entrypoint": "index.html",
   "shell": "src/components/my-app.js",
   "sources": [
-    "images/**/*"
+    "images/**/*",
+    "node_modules/las2peer-frontend-statusbar/**",
+    "node_modules/las2peer-frontend-user-widget/**",
+    "node_modules/@webcomponents/shadycss/**/*.js",
+    "etc/config.properties"
   ],
   "extraDependencies": [
     "manifest.json",
     "node_modules/@webcomponents/webcomponentsjs/**",
-    "push-manifest.json",
-    "node_modules/las2peer-frontend-statusbar/**",
-    "etc/config.properties"
+    "push-manifest.json"
   ],
   "builds": [
     {
-      "name": "esm-bundled",
+      "name": "esm-unbundled",
       "browserCapabilities": [
         "es2015",
         "modules"
@@ -27,18 +29,18 @@
       "html": {
         "minify": true
       },
-      "bundle": true,
+      "bundle": false,
       "addServiceWorker": true
     },
     {
-      "name": "es6-bundled",
+      "name": "es6-unbundled",
       "browserCapabilities": [
         "es2015"
       ],
       "js": {
         "compile": "es2015",
         "minify": true,
-        "transformModulesToAmd": true
+        "transformModulesToAmd": false
       },
       "css": {
         "minify": true
@@ -46,23 +48,7 @@
       "html": {
         "minify": true
       },
-      "bundle": true,
-      "addServiceWorker": true
-    },
-    {
-      "name": "es5-bundled",
-      "js": {
-        "compile": "es5",
-        "minify": true,
-        "transformModulesToAmd": true
-      },
-      "css": {
-        "minify": true
-      },
-      "html": {
-        "minify": true
-      },
-      "bundle": true,
+      "bundle": false,
       "addServiceWorker": true
     }
   ],

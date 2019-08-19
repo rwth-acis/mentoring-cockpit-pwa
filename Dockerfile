@@ -15,4 +15,4 @@ RUN npm audit fix
 RUN polymer build
 
 EXPOSE 8081
-CMD polymer serve build/es5-bundled --hostname 0.0.0.0
+CMD polymer serve build/es6-unbundled --hostname 0.0.0.0
