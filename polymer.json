@@ -7,7 +7,9 @@
   "extraDependencies": [
     "manifest.json",
     "node_modules/@webcomponents/webcomponentsjs/**",
-    "push-manifest.json"
+    "push-manifest.json",
+    "node_modules/las2peer-frontend-statusbar/**",
+    "etc/config.properties"
   ],
   "builds": [
     {
