@@ -2,7 +2,7 @@ import { html, css } from 'lit-element';
 import { PageViewElement } from './page-view-element.js';
 import '@vaadin/vaadin-combo-box/vaadin-combo-box.js';
 import '@google-web-components/google-chart/google-chart.js';
-import 'las2peer-frontend-statusbar/las2peer-frontend-statusbar';
+import 'las2peer-frontend-statusbar/las2peer-frontend-statusbar.js';
 
 // These are the shared styles needed by this element.
 import { SharedStyles } from './shared-styles.js';
@@ -24,6 +24,9 @@ class MyView extends PageViewElement {
       _avgScore: { type: Number },
       _courseDescription: { type: String },
       _feedback: { type: String },
+      _tutorName: { type: String },
+      _courseName: { type: String },
+      _emailForm: { type: String },
       mcService: { type: String },
       //If you are using different services add a property and configure _updateLearningLocker function
       moodleDataProxy: { type: String },
@@ -147,7 +150,7 @@ class MyView extends PageViewElement {
     <p>${this._feedback}</p>
     <ul id = "feedbackList">
     </ul>
-    <p>Contact the student under: <a href="${this._email}">${this._email}</a><p>
+    <p>Contact the student under: <a href="${this._emailForm}">${this._email}</a><p>
     </section>
 
 
@@ -227,6 +230,8 @@ class MyView extends PageViewElement {
             // filter to only the currently selected user
             // only one can be selected and target.value is the id, so [0] selects the first and only user
             const userInfo = this._results.filter(user => user._id === e.target.value)[0];
+            const studentName = comboBox.items.filter(user => user._id === e.target.value)[0].name;
+            this.getEmail(this._email, studentName,userInfo.averageScore, userInfo.results, this._tutorName, this._courseName);
             // display results
             this._feedback = this.getProblems(userInfo.averageScore, userInfo.results)
             this.setLightsColor(userInfo.averageScore, true);
@@ -236,6 +241,7 @@ class MyView extends PageViewElement {
       })
       .catch(() => console.log("Service unavailable"));
   }
+
 
   setLightsColor(avgScore, on) {
     if(on && avgScore < this._redLimit) {
@@ -263,6 +269,65 @@ class MyView extends PageViewElement {
     else return 'green';
   }
 
+  getEmail(email, studentName, avgScore, results, tutorName, courseName) {
+    var emailSubject = courseName + ' Feedback';
+    //var emailText = ;
+    
+    results[0].description.split('\n');
+    if(avgScore < this._redLimit) {
+      var assignNames = '';
+      var assignDescs = '';
+      results.forEach(r => {
+        if(r.score < this._redLimit) {
+          const assignName = r.name;
+          const assignDesc = r.description.split('\n')[1].replace('Quiz description: ','').replace('Description: ', '');
+          //console.log(assignName + assignDesc);
+          assignNames += '\u2022 ' + assignName + '%0A';
+          assignDescs += '\u2022 ' + assignName + ':' + assignDesc + '%0A';
+        }
+      });
+      const emailText = 
+          'Dear ' + studentName + ',%0A%0A'
+          + 'this is a short feedback to your progress in the course: ' + courseName + '.%0A'
+          + 'In the following assignment(s) you reached under ' + this._redLimit*100 + '% points:%0A'
+          + assignNames
+          + '%0APlease take a look at the following course subject(s):%0A'
+          + assignDescs
+          + '%0AIf you have any questions, please don\'t hesitate to ask.%0A'
+          + '%0ABest regards, %0A' + tutorName;
+      this._emailForm = this._email + '?subject=' + emailSubject + '&body=' + emailText;
+    } else if(avgScore < this._yellowLimit) {
+      var assignNames = '';
+      var assignDescs = '';
+      results.forEach(r => {
+        if(r.score < this._yellowLimit) {
+          const assignName = r.name;
+          const assignDesc = r.description.split('\n')[1].replace('Quiz description: ','').replace('Description: ', '');
+          assignNames += '\u2022 ' + assignName + '%0A';
+          assignDescs += '\u2022 ' + assignName + ':' + assignDesc + '%0A';
+        }
+      });
+      const emailText = 
+          'Dear ' + studentName + ',%0A%0A'
+          + 'this is a short feedback to your progress in the course: ' + courseName + '.%0A'
+          + 'In the following assignment(s) you reached under ' + this._yellowLimit*100 + '% points:%0A'
+          + assignNames
+          + '%0APlease take a look at the following course subject(s):%0A'
+          + assignDescs
+          + '%0AIf you have any questions, please don\'t hesitate to ask.%0A'
+          + '%0ABest regards, %0A' + tutorName;
+      this._emailForm = this._email + '?subject=' + emailSubject + '&body=' + emailText;
+    } else {
+      const emailText = 
+          'Dear ' + studentName + ',%0A%0A'
+          + 'this is a short feedback to your progress in the course: ' + courseName + '.%0A'
+          + 'You are on a good path. Keep on!%0A'
+          + '%0AIf you have any questions, please don\'t hesitate to ask.%0A'
+          + '%0ABest regards, %0A' + tutorName;
+      this._emailForm = this._email + '?subject=' + emailSubject + '&body=' + emailText;
+    }
+  }
+
   getProblems(avgScore, results) {
     this._courseDescription = results[0].description.split('\n')[0];
     var feedback;
@@ -271,12 +336,11 @@ class MyView extends PageViewElement {
     if(avgScore < this._redLimit){
       
       results.forEach(r => {
-        if(r.score < this._yellowLimit) {
+        if(r.score < this._redLimit) {
           feedback = r.description.split('\n');
           feedbackList.innerHTML += `<li>${r.name}: ${feedback[1]}</li>\n`;
         }
       });
-      //feedbackList.innerHTML = temp;
       return 'The student needs help. He has problems with following assignments:';
     } 
     else if(avgScore < this._yellowLimit){
@@ -306,6 +370,7 @@ class MyView extends PageViewElement {
   
   handleLogin(event) {
     this._loginSub = event.detail.profile.sub;
+    this._tutorName = event.detail.profile.name;
     const uri = `${this.mcService}/mentoring/${this._loginSub}/courseList`
     fetch(uri, {method: 'GET',
       'Content-Type': 'application/json'
@@ -317,6 +382,7 @@ class MyView extends PageViewElement {
         comboBox.items = json;
         comboBox.addEventListener('change', (e) => {
           this._courseURL = e.target.value;
+          this._courseName = comboBox.items.filter(course => course.link === this._courseURL)[0].name;
           this._courseId = this._courseURL.split('id=').pop();
           combos[1].value = '';
           this.setEverythingToZero();
@@ -346,7 +412,9 @@ class MyView extends PageViewElement {
       comboBox.items = null;
     });
     this.setEverythingToZero();
+    this._loginSub = '';
     this._data = '[]';
+    this._courseName = '';
   }
 
   encode(string) {
