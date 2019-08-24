@@ -270,7 +270,7 @@ class MyView extends PageViewElement {
           if(item != null) {
             grid.selectedItems = item ? [item] : [];
             this._email = item._id;
-            const userInfo = this._results.filter(user => user._id === this._email)[0];
+            const userInfo = this._results.filter(user => user._id.replace('mailto:', '') == this._email)[0];
             this.getEmail(this._email, item.name, userInfo.averageScore, userInfo.results, this._tutorName, this._courseName);
             this._feedback = this.getProblems(userInfo.averageScore, userInfo.results);
             this.setLightsColor(userInfo.averageScore, true);
