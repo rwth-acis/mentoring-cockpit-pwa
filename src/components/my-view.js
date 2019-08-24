@@ -3,6 +3,7 @@ import { PageViewElement } from './page-view-element.js';
 import '@vaadin/vaadin-combo-box/vaadin-combo-box.js';
 import '@google-web-components/google-chart/google-chart.js';
 import 'las2peer-frontend-statusbar/las2peer-frontend-statusbar.js';
+import '@vaadin/vaadin-grid/vaadin-grid.js'
 
 // These are the shared styles needed by this element.
 import { SharedStyles } from './shared-styles.js';
@@ -27,6 +28,7 @@ class MyView extends PageViewElement {
       _tutorName: { type: String },
       _courseName: { type: String },
       _emailForm: { type: String },
+      _studentName: {type: String},
       mcService: { type: String },
       //If you are using different services add a property and configure _updateLearningLocker function
       moodleDataProxy: { type: String },
@@ -39,6 +41,41 @@ class MyView extends PageViewElement {
     return [
       SharedStyles,
       css`
+        #pages {
+          display: flex;
+          flex-wrap: wrap;
+          margin: 20px auto;
+        }
+      
+        #pages > button {
+          user-select: none;
+          padding: 5px;
+          margin: 0 5px;
+          border-radius: 10%;
+          border: 0;
+          background: transparent;
+          font: inherit;
+          outline: none;
+          cursor: pointer;
+        }
+      
+        #pages > button:not([disabled]):hover,
+        #pages > button:focus {
+          color: #ccc;
+          background-color: #eee;
+        }
+      
+        #pages > button[selected] {
+          font-weight: bold;
+          color: white;
+          background-color: #ccc;
+        }
+      
+        #pages > button[disabled] {
+          opacity: 0.5;
+          cursor: default;
+        }
+
         #traffic-light {
           height: 225px;
           width: 100px;
@@ -107,17 +144,19 @@ class MyView extends PageViewElement {
       item-value-path="link" 
       item-label-path="name">
       </vaadin-combo-box>
-
-      <vaadin-combo-box 
-      label="Student" 
-      placeholder="Select student" 
-      item-value-path="_id" 
-      item-label-path="name">
-      </vaadin-combo-box>
-      
     </section>
 
     <section>
+      <vaadin-grid page-size="10" height-by-rows>
+        <vaadin-grid-column path="name" header="Name"></vaadin-grid-column>
+        <vaadin-grid-column width="200px" path="_id" header="Email"></vaadin-grid-column>
+      </vaadin-grid>
+
+      <div id="pages"></div>
+    </section>
+
+    <section>
+      <h2>${this._studentName} </h2>
       <div id="traffic-light">
         <div id="redLight" class="bulb"></div>
         <div id="yellowLight" class="bulb"></div>
@@ -165,7 +204,6 @@ class MyView extends PageViewElement {
     this._redLimit = 0.5;
     this._yellowLimit = 0.6;
 
-    
     //read form properties file
     fetch('etc/config.properties')
       .then(res => res.text())
@@ -220,24 +258,34 @@ class MyView extends PageViewElement {
     })
       .then(res => res.json())
       .then(json => {
-        // fill comboBox with items
+        const grid = this.shadowRoot.querySelector('vaadin-grid');
+        const users = JSON.parse(JSON.stringify(json).replace(/mailto:/g, ''));
+        grid.items = users;
+        const pagesControl = this.shadowRoot.querySelector('#pages');
+        var pages;
+        this.updateItemsFromPage(1,grid,pagesControl, pages, users);
 
-        const comboBox = this.shadowRoot.querySelectorAll('vaadin-combo-box')[1];
-        comboBox.items = json;
-        comboBox.addEventListener('change', (e) => {
-          if(this._results != null) {
-            this._email = e.target.value;
-            // filter to only the currently selected user
-            // only one can be selected and target.value is the id, so [0] selects the first and only user
-            const userInfo = this._results.filter(user => user._id === e.target.value)[0];
-            const studentName = comboBox.items.filter(user => user._id === e.target.value)[0].name;
-            this.getEmail(this._email, studentName,userInfo.averageScore, userInfo.results, this._tutorName, this._courseName);
-            // display results
-            this._feedback = this.getProblems(userInfo.averageScore, userInfo.results)
+        grid.addEventListener('active-item-changed', event => {
+          const item = event.detail.value;
+          if(item != null) {
+            grid.selectedItems = item ? [item] : [];
+            this._email = item._id;
+            const userInfo = this._results.filter(user => user._id === this._email)[0];
+            this.getEmail(this._email, item.name, userInfo.averageScore, userInfo.results, this._tutorName, this._courseName);
+            this._feedback = this.getProblems(userInfo.averageScore, userInfo.results);
             this.setLightsColor(userInfo.averageScore, true);
             this._data = JSON.stringify(userInfo.results.map(r => [r.name, r.score*100]));
+            this._studentName = item.name;
+          } else {
+            this._studentName = '';
+            this._email = '';
+            this._courseDescription = '';
+            this._feedback = '';
+            this.setLightsColor(0, false);
+            this.shadowRoot.getElementById('feedbackList').innerHTML = '';
+            this._data = '[]';
           }
-        })
+        });
       })
       .catch(() => console.log("Service unavailable"));
   }
@@ -358,14 +406,25 @@ class MyView extends PageViewElement {
   _updateLearningLocker() {
     fetch(`${this.moodleDataProxy}/mc/moodle-data/${this._courseId}`, {method: 'POST'})
     .catch(() => console.log("Update failed"));
-    const combos = this.shadowRoot.querySelectorAll('vaadin-combo-box');
-    combos.forEach(comboBox => comboBox.value = '');
-    combos[1].items = null;
-    this._data = '[]';
-    this.setEverythingToZero();
-    this.fetchPersona();
-    this.fetchStatements();;
-    //location.reload();
+    var self = this;
+    const button = this.shadowRoot.getElementById('updateButton');
+    button.disabled = true;
+    setTimeout(function () {
+      //alert('The course was updated');
+      const grid = self.shadowRoot.querySelector('vaadin-grid');
+      grid.items = null;
+      const pagesControl = self.shadowRoot.querySelector('#pages');
+      while(pagesControl.firstChild) {
+        pagesControl.removeChild(pagesControl.firstChild);
+      }
+      self._data = '[]';
+      self.setEverythingToZero();
+      self.fetchPersona();
+      self.fetchStatements();
+      const button = self.shadowRoot.getElementById('updateButton');
+      button.disabled = false;
+      //location.reload();
+    }, 1500);
   }
   
   handleLogin(event) {
@@ -377,14 +436,18 @@ class MyView extends PageViewElement {
     })
       .then(res => res.json())
       .then (json => {
-        const combos = this.shadowRoot.querySelectorAll('vaadin-combo-box');
-        const comboBox = combos[0];
+        const comboBox = this.shadowRoot.querySelector('vaadin-combo-box');
         comboBox.items = json;
         comboBox.addEventListener('change', (e) => {
           this._courseURL = e.target.value;
           this._courseName = comboBox.items.filter(course => course.link === this._courseURL)[0].name;
           this._courseId = this._courseURL.split('id=').pop();
-          combos[1].value = '';
+          const grid = this.shadowRoot.querySelector('vaadin-grid');
+          grid.items = null;
+          const pagesControl = this.shadowRoot.querySelector('#pages');
+          while(pagesControl.firstChild) {
+            pagesControl.removeChild(pagesControl.firstChild);
+          }
           this.setEverythingToZero();
           this.fetchPersona();
           this.fetchStatements();;
@@ -400,17 +463,24 @@ class MyView extends PageViewElement {
     this._email = '';
     this._courseDescription = '';
     this._feedback = '';
+    this._studentName = '';
     this.setLightsColor(0, false);
     this.shadowRoot.getElementById('feedbackList').innerHTML = '';
 
   }
 
   handleLogout() {
-    const combos = this.shadowRoot.querySelectorAll('vaadin-combo-box');
-    combos.forEach(comboBox => {
-      comboBox.value = '';
-      comboBox.items = null;
-    });
+    const comboBox = this.shadowRoot.querySelector('vaadin-combo-box');
+    comboBox.value = '';
+    comboBox.items = null;
+
+    const grid = this.shadowRoot.querySelector('vaadin-grid');
+    grid.items = null;
+    const pagesControl = this.shadowRoot.querySelector('#pages');
+    while(pagesControl.firstChild) {
+      pagesControl.removeChild(pagesControl.firstChild);
+    }
+
     this.setEverythingToZero();
     this._loginSub = '';
     this._data = '[]';
@@ -423,6 +493,76 @@ class MyView extends PageViewElement {
     for (var i = 0; i < length; i++)
         number += string.charCodeAt(i).toString(16);
     return number;
+  }
+
+
+  updateItemsFromPage(page, grid, pagesControl, pages, users) {
+    var self = this;
+    if (page === undefined) {
+      return;
+    }
+
+    if (!pages) {
+      pages = Array.apply(null, {length: Math.ceil(users.length / grid.pageSize)}).map(function(item, index) {
+        return index + 1;
+      });
+
+      const prevBtn = window.document.createElement('button');
+      prevBtn.textContent = '<';
+      prevBtn.addEventListener('click', function() {
+        const selectedPage = parseInt(pagesControl.querySelector('[selected]').textContent);
+        self.updateItemsFromPage(selectedPage - 1, grid, pagesControl, pages, users);
+      });
+      pagesControl.appendChild(prevBtn);
+
+      pages.forEach(function(pageNumber) {
+        const pageBtn = window.document.createElement('button');
+        pageBtn.textContent = pageNumber;
+        pageBtn.addEventListener('click', function(e) {
+          self.updateItemsFromPage(parseInt(e.target.textContent), grid, pagesControl, pages, users);
+        });
+        if (pageNumber === page) {
+          pageBtn.setAttribute('selected', true);
+        }
+        pagesControl.appendChild(pageBtn);
+      });
+
+      const nextBtn = window.document.createElement('button');
+      nextBtn.textContent = '>';
+      nextBtn.addEventListener('click', function() {
+        const selectedPage = parseInt(pagesControl.querySelector('[selected]').textContent);
+        self.updateItemsFromPage(selectedPage + 1, grid, pagesControl, pages, users);
+      });
+      pagesControl.appendChild(nextBtn);
+    }
+
+    const buttons = Array.from(pagesControl.children);
+    buttons.forEach(function(btn, index) {
+      if (parseInt(btn.textContent) === page) {
+        btn.setAttribute('selected', true);
+      } else {
+        btn.removeAttribute('selected');
+      }
+      if (index === 0) {
+        if (page === 1) {
+          btn.setAttribute('disabled', '');
+        } else {
+          btn.removeAttribute('disabled');
+        }
+      }
+      if (index === buttons.length - 1) {
+        if (page === pages.length) {
+          btn.setAttribute('disabled', '');
+        } else {
+          btn.removeAttribute('disabled');
+        }
+      }
+    });
+
+    var start = (page - 1) * grid.pageSize;
+    var end = page * grid.pageSize;
+    grid.items = users.slice(start, end);
+    //console.log(grid.items);
   }
 
 }

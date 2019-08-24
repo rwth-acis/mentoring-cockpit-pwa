@@ -25,13 +25,15 @@
     "@polymer/polymer": "^3.1.0",
     "@vaadin/vaadin-charts": "^6.2.3",
     "@vaadin/vaadin-combo-box": "^5.0.5",
+    "@vaadin/vaadin-grid": "^5.4.8",
     "@webcomponents/webcomponentsjs": "^2.2.4",
     "base-64": "^0.1.0",
     "google-chart-polymer-3": "^3.0.1",
     "google-charts": "^2.0.0",
+    "las2peer-frontend-statusbar": "github:rwth-acis/las2peer-frontend-statusbar",
     "lit-element": "^2.0.1",
-    "pwa-helpers": "^0.9.0",
-    "las2peer-frontend-statusbar": "github:rwth-acis/las2peer-frontend-statusbar"
+    "properties-reader": "^0.3.1",
+    "pwa-helpers": "^0.9.0"
   },
   "devDependencies": {
     "@polymer/test-fixture": "^4.0.2",
