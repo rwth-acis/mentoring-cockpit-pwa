@@ -377,7 +377,7 @@ class MyView extends PageViewElement {
   }
 
   getProblems(avgScore, results) {
-    this._courseDescription = results[0].description.split('\n')[0];
+    this._courseDescription = results[0].description.split('\n')[0].replace(/<.*?>/g, '');
     var feedback;
     const feedbackList = this.shadowRoot.getElementById('feedbackList');
     feedbackList.innerText = '';
@@ -385,8 +385,8 @@ class MyView extends PageViewElement {
       
       results.forEach(r => {
         if(r.score < this._redLimit) {
-          feedback = r.description.split('\n');
-          feedbackList.innerHTML += `<li>${r.name}: ${feedback[1]}</li>\n`;
+          feedback = r.description.split('\n')[1].replace(/<.*?>/g, '');
+          feedbackList.innerHTML += `<li>${r.name}: ${feedback}</li>\n`;
         }
       });
       return 'The student needs help. He has problems with following assignments:';
@@ -394,14 +394,15 @@ class MyView extends PageViewElement {
     else if(avgScore < this._yellowLimit){
       results.forEach(r => {
         if(r.score < this._yellowLimit) {
-          feedback = r.description.split('\n');
-          feedbackList.innerHTML += `<li>${r.name}: ${feedback[1]}</li>\n`;
+          feedback = r.description.split('\n')[1].replace(/<.*?>/g, '');
+          feedbackList.innerHTML += `<li>${r.name}: ${feedback}</li>\n`;
         }
       });
-      return 'The student may need some assisstens with following assignments: \n'.concat(feedback);
+      return 'The student may need some assisstens with following assignments:';
     }
     else return 'It seems, that the student doesn\'t need additional help.';
   }
+
 
   _updateLearningLocker() {
     fetch(`${this.moodleDataProxy}/mc/moodle-data/${this._courseId}`, {method: 'POST'})
