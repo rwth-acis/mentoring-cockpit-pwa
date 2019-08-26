@@ -410,8 +410,9 @@ class MyView extends PageViewElement {
     var self = this;
     const button = this.shadowRoot.getElementById('updateButton');
     button.disabled = true;
+    alert('The course is being updated. This takes a few seconds. Please wait.');
     setTimeout(function () {
-      //alert('The course was updated');
+      alert('The course is up to date.');
       const grid = self.shadowRoot.querySelector('vaadin-grid');
       grid.items = null;
       const pagesControl = self.shadowRoot.querySelector('#pages');
@@ -425,7 +426,7 @@ class MyView extends PageViewElement {
       const button = self.shadowRoot.getElementById('updateButton');
       button.disabled = false;
       //location.reload();
-    }, 1500);
+    }, 8000);
   }
   
   handleLogin(event) {
