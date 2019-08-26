@@ -328,7 +328,7 @@ class MyView extends PageViewElement {
       results.forEach(r => {
         if(r.score < this._redLimit) {
           const assignName = r.name;
-          const assignDesc = r.description.split('\n')[1].replace('Quiz description: ','').replace('Description: ', '');
+          const assignDesc = r.description.split('\n')[1].replace('Quiz description: ','').replace('Description: ', '').replace(/<.*?>/g, '');
           //console.log(assignName + assignDesc);
           assignNames += '\u2022 ' + assignName + '%0A';
           assignDescs += '\u2022 ' + assignName + ':' + assignDesc + '%0A';
@@ -343,14 +343,14 @@ class MyView extends PageViewElement {
           + assignDescs
           + '%0AIf you have any questions, please don\'t hesitate to ask.%0A'
           + '%0ABest regards, %0A' + tutorName;
-      this._emailForm = this._email + '?subject=' + emailSubject + '&body=' + emailText;
+      this._emailForm = 'mailto:' + this._email + '?subject=' + emailSubject.replace(/\s+/g, '%20') + '&body=' + emailText.replace(/\s+/g, '%20');
     } else if(avgScore < this._yellowLimit) {
       var assignNames = '';
       var assignDescs = '';
       results.forEach(r => {
         if(r.score < this._yellowLimit) {
           const assignName = r.name;
-          const assignDesc = r.description.split('\n')[1].replace('Quiz description: ','').replace('Description: ', '');
+          const assignDesc = r.description.split('\n')[1].replace('Quiz description: ','').replace('Description: ', '').replace(/<.*?>/g, '');
           assignNames += '\u2022 ' + assignName + '%0A';
           assignDescs += '\u2022 ' + assignName + ':' + assignDesc + '%0A';
         }
@@ -364,7 +364,7 @@ class MyView extends PageViewElement {
           + assignDescs
           + '%0AIf you have any questions, please don\'t hesitate to ask.%0A'
           + '%0ABest regards, %0A' + tutorName;
-      this._emailForm = this._email + '?subject=' + emailSubject + '&body=' + emailText;
+      this._emailForm = 'mailto:' + this._email + '?subject=' + emailSubject.replace(/\s+/g, '%20') + '&body=' + emailText.replace(/\s+/g, '%20');
     } else {
       const emailText = 
           'Dear ' + studentName + ',%0A%0A'
@@ -372,7 +372,7 @@ class MyView extends PageViewElement {
           + 'You are on a good path. Keep on!%0A'
           + '%0AIf you have any questions, please don\'t hesitate to ask.%0A'
           + '%0ABest regards, %0A' + tutorName;
-      this._emailForm = this._email + '?subject=' + emailSubject + '&body=' + emailText;
+      this._emailForm = 'mailto:' + this._email + '?subject=' + emailSubject.replace(/\s+/g, '%20') + '&body=' + emailText.replace(/\s+/g, '%20');
     }
   }
 
