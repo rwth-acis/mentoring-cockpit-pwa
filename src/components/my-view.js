@@ -150,6 +150,7 @@ class MyView extends PageViewElement {
       <vaadin-grid page-size="10" height-by-rows>
         <vaadin-grid-column path="name" header="Name"></vaadin-grid-column>
         <vaadin-grid-column width="200px" path="_id" header="Email"></vaadin-grid-column>
+        <vaadin-grid-column path="averageScore" header="Average Score"></vaadin-grid-column>
       </vaadin-grid>
 
       <div id="pages"></div>
@@ -366,10 +367,22 @@ class MyView extends PageViewElement {
           + '%0ABest regards, %0A' + tutorName;
       this._emailForm = 'mailto:' + this._email + '?subject=' + emailSubject.replace(/\s+/g, '%20') + '&body=' + emailText.replace(/\s+/g, '%20');
     } else {
+      var assignNames = '';
+      var assignDescs = '';
+      results.forEach(r => {
+        if(r.score < this._redLimit) {
+          const assignName = r.name;
+          const assignDesc = r.description.split('\n')[1].replace('Quiz description: ','').replace('Description: ', '').replace(/<.*?>/g, '');
+          assignNames += '\u2022 ' + assignName + '%0A';
+          assignDescs += '\u2022 ' + assignName + ':' + assignDesc + '%0A';
+        }
+      });
       const emailText = 
           'Dear ' + studentName + ',%0A%0A'
           + 'this is a short feedback to your progress in the course: ' + courseName + '.%0A'
           + 'You are on a good path. Keep on!%0A'
+          + 'But you could repeat following assignments:%0A%0A'
+          + assignDescs
           + '%0AIf you have any questions, please don\'t hesitate to ask.%0A'
           + '%0ABest regards, %0A' + tutorName;
       this._emailForm = 'mailto:' + this._email + '?subject=' + emailSubject.replace(/\s+/g, '%20') + '&body=' + emailText.replace(/\s+/g, '%20');
