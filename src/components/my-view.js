@@ -161,7 +161,7 @@ class MyView extends PageViewElement {
       <vaadin-grid page-size="10" height-by-rows>
         <vaadin-grid-column path="name" header="Name"></vaadin-grid-column>
         <vaadin-grid-column width="200px" path="_id" header="Email"></vaadin-grid-column>
-        <vaadin-grid-column path="averageScore" header="Average Score"></vaadin-grid-column>
+        <vaadin-grid-column path="averageScore" header="Avg. Course Score"></vaadin-grid-column>
       </vaadin-grid>
 
       <div id="pages"></div>
@@ -256,8 +256,10 @@ class MyView extends PageViewElement {
       .then(res => res.json())
       .then(json => {
         this._results = json;
-        const scores = json.map(e => e.averageScore);
-        scores.forEach(score => {
+        json.forEach(user => {
+          let score = user.averageScore;
+          const sensorUser = this._sensorData.filter(su => su._id == user._id);
+          if (sensorUser != null) score += 0.05;
           if (this.getLightsColor(score) === 'red') this._redUser++;
           else if (this.getLightsColor(score) === 'yellow') this._yellowUser++;
           else if (this.getLightsColor(score) === 'green') this._greenUser++;
@@ -465,9 +467,9 @@ class MyView extends PageViewElement {
       }
       self._data = '[]';
       self.setEverythingToZero();
+      self.fetchSensorData();
       self.fetchPersona();
       self.fetchStatements();
-      self.fetchSensorData();
       const button = self.shadowRoot.getElementById('updateButton');
       button.disabled = false;
       //location.reload();
@@ -496,9 +498,10 @@ class MyView extends PageViewElement {
             pagesControl.removeChild(pagesControl.firstChild);
           }
           this.setEverythingToZero();
+          this.fetchSensorData();
           this.fetchPersona();
           this.fetchStatements();
-          this.fetchSensorData();
+
         });
       });
   }
