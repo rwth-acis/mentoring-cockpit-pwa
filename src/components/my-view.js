@@ -29,6 +29,7 @@ class MyView extends PageViewElement {
       _courseName: { type: String },
       _emailForm: { type: String },
       _studentName: {type: String},
+      _sensorData: {type: Object},
       mcService: { type: String },
       //If you are using different services add a property and configure _updateLearningLocker function
       moodleDataProxy: { type: String },
@@ -41,6 +42,7 @@ class MyView extends PageViewElement {
     return [
       SharedStyles,
       css`
+      
         #pages {
           display: flex;
           flex-wrap: wrap;
@@ -145,6 +147,15 @@ class MyView extends PageViewElement {
       item-label-path="name">
       </vaadin-combo-box>
     </section>
+    <section>
+    <h2>Course Statistics:</h2>
+    <ul style="list-style-type:none;">
+      <li>Green Students: ${this._greenUser}</li>
+      <li>Yellow Students: ${this._yellowUser}</li>
+      <li>Red Students: ${this._redUser}</li>
+      <li>Average Score: ${this._avgScore}</li>
+    </ul>
+    </section>
 
     <section>
       <vaadin-grid page-size="10" height-by-rows>
@@ -173,16 +184,10 @@ class MyView extends PageViewElement {
         cols='[{"label":"Assignment", "type":"string"}, {"label":"Score", "type":"number"}]'
         rows='${this._data}'>
       </google-chart>
+      <h3>Performed sensor actions:</h3>
+      <ul id="sensorList"></ul>
     </section>
-    <section>
-    <h2>Course Statistics:</h2>
-    <ul style="list-style-type:none;">
-      <li>Green Students: ${this._greenUser}</li>
-      <li>Yellow Students: ${this._yellowUser}</li>
-      <li>Red Students: ${this._redUser}</li>
-      <li>Average Score: ${this._avgScore}</li>
-    </ul>
-    </section>
+    
 
     <section>
     <h2>Problems:</h2>
@@ -229,6 +234,18 @@ class MyView extends PageViewElement {
   }
 
 
+  fetchSensorData() {
+    const courseURL_Encoded = this.encode(this._courseURL);
+    const uri = `${this.mcService}/mentoring/${this._loginSub}/${courseURL_Encoded}/sensor`;
+    fetch(uri, {method: 'GET',
+      'Content-Type': 'application/json'
+    })
+      .then(res => res.json())
+      .then(json => this._sensorData = json)
+      .catch(() => console.log("Service unavailable"));
+  }
+
+
   fetchStatements() {
     //aggregation http interface
     const courseURL_Encoded = this.encode(this._courseURL);
@@ -260,6 +277,7 @@ class MyView extends PageViewElement {
       .then(res => res.json())
       .then(json => {
         const grid = this.shadowRoot.querySelector('vaadin-grid');
+        
         const users = JSON.parse(JSON.stringify(json).replace(/mailto:/g, ''));
         grid.items = users;
         const pagesControl = this.shadowRoot.querySelector('#pages');
@@ -271,18 +289,31 @@ class MyView extends PageViewElement {
           if(item != null) {
             grid.selectedItems = item ? [item] : [];
             this._email = item._id;
+            this._studentName = item.name;
             const userInfo = this._results.filter(user => user._id.replace('mailto:', '') == this._email)[0];
             this.getEmail(this._email, item.name, userInfo.averageScore, userInfo.results, this._tutorName, this._courseName);
             this._feedback = this.getProblems(userInfo.averageScore, userInfo.results);
-            this.setLightsColor(userInfo.averageScore, true);
+            var averageScore = userInfo.averageScore;
+            const sensorInfo = this._sensorData.filter(data => data._id.replace('mailto:', '') == this._email)[0];
+            const sensorList = this.shadowRoot.getElementById('sensorList');
+            sensorList.innerHTML = '';
+            if (sensorInfo != null) {
+              averageScore += 0.05;
+              
+              sensorInfo.actions.forEach(action => sensorList.innerHTML += `<li>${action.objectName}: ${action.objectDesc}</li>\n`);
+
+            }
+
+            this.setLightsColor(averageScore, true);
             this._data = JSON.stringify(userInfo.results.map(r => [r.name, r.score*100]));
-            this._studentName = item.name;
+
           } else {
             this._studentName = '';
             this._email = '';
             this._courseDescription = '';
             this._feedback = '';
             this.setLightsColor(0, false);
+            this.shadowRoot.getElementById('sensorList').innerHTML = '';
             this.shadowRoot.getElementById('feedbackList').innerHTML = '';
             this._data = '[]';
           }
@@ -330,7 +361,6 @@ class MyView extends PageViewElement {
         if(r.score < this._redLimit) {
           const assignName = r.name;
           const assignDesc = r.description.split('\n')[1].replace('Quiz description: ','').replace('Description: ', '').replace(/<.*?>/g, '');
-          //console.log(assignName + assignDesc);
           assignNames += '\u2022 ' + assignName + '%0A';
           assignDescs += '\u2022 ' + assignName + ':' + assignDesc + '%0A';
         }
@@ -416,10 +446,11 @@ class MyView extends PageViewElement {
     else return 'It seems, that the student doesn\'t need additional help.';
   }
 
-
   _updateLearningLocker() {
+    fetch(`http://137.226.232.175:31019/sensor/sendData`, {method: 'POST'})
+    .catch(() => console.log('Sensor Update failed'));
     fetch(`${this.moodleDataProxy}/mc/moodle-data/${this._courseId}`, {method: 'POST'})
-    .catch(() => console.log("Update failed"));
+    .catch(() => console.log('Moodle Update failed'));
     var self = this;
     const button = this.shadowRoot.getElementById('updateButton');
     button.disabled = true;
@@ -436,6 +467,7 @@ class MyView extends PageViewElement {
       self.setEverythingToZero();
       self.fetchPersona();
       self.fetchStatements();
+      self.fetchSensorData();
       const button = self.shadowRoot.getElementById('updateButton');
       button.disabled = false;
       //location.reload();
@@ -465,7 +497,8 @@ class MyView extends PageViewElement {
           }
           this.setEverythingToZero();
           this.fetchPersona();
-          this.fetchStatements();;
+          this.fetchStatements();
+          this.fetchSensorData();
         });
       });
   }
@@ -481,6 +514,7 @@ class MyView extends PageViewElement {
     this._studentName = '';
     this.setLightsColor(0, false);
     this.shadowRoot.getElementById('feedbackList').innerHTML = '';
+    this.shadowRoot.getElementById('sensorList').innerHTML = '';
 
   }
 
@@ -507,6 +541,7 @@ class MyView extends PageViewElement {
     var length = string.length;
     for (var i = 0; i < length; i++)
         number += string.charCodeAt(i).toString(16);
+
     return number;
   }
 
@@ -577,7 +612,6 @@ class MyView extends PageViewElement {
     var start = (page - 1) * grid.pageSize;
     var end = page * grid.pageSize;
     grid.items = users.slice(start, end);
-    //console.log(grid.items);
   }
 
 }
