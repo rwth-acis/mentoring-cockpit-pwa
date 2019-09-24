@@ -449,7 +449,7 @@ class MyView extends PageViewElement {
   }
 
   _updateLearningLocker() {
-    fetch(`http://137.226.232.175:31019/sensor/sendData`, {method: 'POST'})
+    fetch(`https://las2peer.tech4comp.dbis.rwth-aachen.de/sensor/sendData`, {method: 'POST'})
     .catch(() => console.log('Sensor Update failed'));
     fetch(`${this.moodleDataProxy}/mc/moodle-data/${this._courseId}`, {method: 'POST'})
     .catch(() => console.log('Moodle Update failed'));
