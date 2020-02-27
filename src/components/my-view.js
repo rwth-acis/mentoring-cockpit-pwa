@@ -481,7 +481,10 @@ class MyView extends PageViewElement {
     this._tutorName = event.detail.profile.name;
     const uri = `${this.mcService}/mentoring/${this._loginSub}/courseList`
     fetch(uri, {method: 'GET',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+	  headers: {
+            'email': event.detail.profile.email
+          }
     })
       .then(res => res.json())
       .then (json => {
