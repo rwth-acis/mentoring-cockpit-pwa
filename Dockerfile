@@ -10,8 +10,6 @@ WORKDIR /root/app
 
 RUN npm install
 
-RUN npm audit fix
-
 RUN polymer build
 
 EXPOSE 8081

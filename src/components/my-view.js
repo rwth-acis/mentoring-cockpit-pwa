@@ -188,7 +188,6 @@ class MyView extends PageViewElement {
       <ul id="sensorList"></ul>
     </section>
     
-
     <section>
     <h2>Problems:</h2>
     <p>${this._courseDescription}</p>
@@ -198,7 +197,12 @@ class MyView extends PageViewElement {
     <p>Contact the student under: <a href="${this._emailForm}">${this._email}</a><p>
     </section>
 
-
+    <section>
+      <h2>TMitocar Feedback Stats</h2>
+      <div style="text-align:center;">
+        <button class="button button2" @click="${this._retrieveFeedbackStats}" id="feedbackButton">Retrieve stats as CSV</button>
+      </div>
+    </section>
     `
   }
 
@@ -474,6 +478,21 @@ class MyView extends PageViewElement {
       button.disabled = false;
       //location.reload();
     }, 8000);
+  }
+
+  _retrieveFeedbackStats() {
+    alert('Download is commencing. This may take a few seconds. Please wait.');
+    fetch('http://localhost:8080/mentoring/tmitocarFeedback', {method:'POST'})
+    .then(response => response.blob())
+        .then(blob => {
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = "AllStatements.csv";
+            document.body.appendChild(a);
+            a.click();    
+            a.remove();
+        });
   }
   
   handleLogin(event) {
